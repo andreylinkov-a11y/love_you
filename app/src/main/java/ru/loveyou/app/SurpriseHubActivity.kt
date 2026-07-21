@@ -47,6 +47,7 @@ private fun SurpriseHub() {
     val progress by progressStore.progress.collectAsState(initial = GameProgress())
     val matchLevel = context.getSharedPreferences("match3_progress", 0).getInt("level", 1)
     val tetrisBest = context.getSharedPreferences("falling_hearts_progress", 0).getInt("best", 0)
+    val rescueLevel = context.getSharedPreferences("rescue_progress", 0).getInt("level", 1)
     val transition = rememberInfiniteTransition(label = "hub")
     val pulse by transition.animateFloat(.96f, 1.06f, infiniteRepeatable(tween(950), RepeatMode.Reverse), label = "pulse")
 
@@ -75,24 +76,13 @@ private fun SurpriseHub() {
                     }
                 }
             }
-            item {
-                AdventureCard("💓", "Живое сердце", "Ритм, точность, энергия и комбо · уровень ${progress.heartLevel}", "Играть в ритм") {
-                    context.startActivity(Intent(context, SurpriseV4Activity::class.java))
-                }
-            }
-            item {
-                AdventureCard("🌷", "Сад чудес", "Три в ряд со свайпами и каскадами · уровень $matchLevel", "Открыть сад") {
-                    context.startActivity(Intent(context, Match3Activity::class.java))
-                }
-            }
-            item {
-                AdventureCard("💞", "Падающие сердца", "Фигуры, линии, комбо и растущая скорость · рекорд $tetrisBest", "Начать падение") {
-                    context.startActivity(Intent(context, TetrisActivity::class.java))
-                }
-            }
+            item { AdventureCard("💓", "Живое сердце", "Ритм, точность, энергия и комбо · уровень ${progress.heartLevel}", "Играть в ритм") { context.startActivity(Intent(context, SurpriseV4Activity::class.java)) } }
+            item { AdventureCard("🌷", "Сад чудес", "Три в ряд со свайпами и каскадами · уровень $matchLevel", "Открыть сад") { context.startActivity(Intent(context, Match3Activity::class.java)) } }
+            item { AdventureCard("💞", "Падающие сердца", "Фигуры, линии, комбо и растущая скорость · рекорд $tetrisBest", "Начать падение") { context.startActivity(Intent(context, TetrisActivity::class.java)) } }
+            item { AdventureCard("🗝️", "Спаси сердце", "Гарантированно проходимый лабиринт с управлением пальцем · уровень $rescueLevel", "Начать спасение") { context.startActivity(Intent(context, RescueActivity::class.java)) } }
             item {
                 Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = .18f))) {
-                    Text("Следующие главы: новый гарантированно проходимый лабиринт, пары с уровнями памяти и сенсорная головоломка.", color = Color.White, modifier = Modifier.padding(15.dp))
+                    Text("Следующие главы: пары с уровнями памяти и сенсорная головоломка.", color = Color.White, modifier = Modifier.padding(15.dp))
                 }
             }
             item { Spacer(Modifier.height(4.dp)) }
@@ -113,9 +103,7 @@ private fun AdventureCard(emoji: String, title: String, subtitle: String, button
                 }
             }
             Spacer(Modifier.height(12.dp))
-            Button(onClick = onClick, modifier = Modifier.fillMaxWidth().height(52.dp), colors = ButtonDefaults.buttonColors(containerColor = HubRose), shape = RoundedCornerShape(17.dp)) {
-                Text(button, fontWeight = FontWeight.ExtraBold)
-            }
+            Button(onClick = onClick, modifier = Modifier.fillMaxWidth().height(52.dp), colors = ButtonDefaults.buttonColors(containerColor = HubRose), shape = RoundedCornerShape(17.dp)) { Text(button, fontWeight = FontWeight.ExtraBold) }
         }
     }
 }
