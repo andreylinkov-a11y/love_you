@@ -4,8 +4,6 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -28,6 +26,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -67,7 +66,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.math.abs
 import kotlin.math.roundToInt
 
 private val V4Plum = Color(0xFF4D1838)
@@ -112,10 +110,9 @@ private fun SurpriseV4App() {
                 V4Page.HOME -> V4Home(
                     progress = progress,
                     onHeart = { page = V4Page.HEART },
-                    onLegacyGames = {
-                        context.startActivity(Intent(context, SurpriseActivity::class.java))
-                    }
+                    onLegacyGames = { context.startActivity(Intent(context, SurpriseActivity::class.java)) }
                 )
+
                 V4Page.HEART -> LivingHeartGame(
                     level = progress.heartLevel,
                     onBack = { page = V4Page.HOME },
@@ -128,9 +125,7 @@ private fun SurpriseV4App() {
                 )
             }
 
-            result?.let { run ->
-                HeartResultCard(run = run, onClose = { result = null })
-            }
+            result?.let { run -> HeartResultCard(run = run, onClose = { result = null }) }
         }
     }
 }
@@ -156,7 +151,7 @@ private fun V4Home(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Text("СЮРПРИЗ · НОВАЯ ГЛАВА", color = Color.White, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
+        Text("СЮРПРИЗ · НОВАЯ ГЛАВА", color = Color.White, fontWeight = FontWeight.Black)
         Text("Теперь игры развиваются вместе с тобой", color = Color.White.copy(alpha = .82f))
 
         Card(
@@ -275,7 +270,6 @@ private fun LivingHeartGame(
         ),
         label = "ring"
     )
-
     val idlePulse by transition.animateFloat(
         initialValue = .98f,
         targetValue = 1.04f,
@@ -288,14 +282,14 @@ private fun LivingHeartGame(
         label = "energy-scale"
     )
 
-    LaunchedEffect(running, finished) {
+    LaunchedEffect(running, finished, level) {
         if (running && !finished) {
+            var ticks = 0
             while (secondsLeft > 0 && energy > 0f) {
                 delay(100)
+                ticks++
                 energy = (energy - (.0042f + level * .00018f)).coerceAtLeast(0f)
-                if (secondsLeft > 0 && System.currentTimeMillis() % 1000L < 120L) {
-                    secondsLeft = (secondsLeft - 1).coerceAtLeast(0)
-                }
+                if (ticks % 10 == 0) secondsLeft = (secondsLeft - 1).coerceAtLeast(0)
             }
             finished = true
             running = false
@@ -360,6 +354,7 @@ private fun LivingHeartGame(
                             feedback = "Мимо ритма — дождись импульса"
                             tapBoost = .04f
                         }
+
                         scope.launch {
                             delay(90)
                             tapBoost = 0f
@@ -382,7 +377,7 @@ private fun LivingHeartGame(
                 fontSize = 132.sp,
                 modifier = Modifier.scale(if (running) energyScale else idlePulse)
             )
-            AnimatedVisibility(visible = combo >= 4) {
+            if (combo >= 4) {
                 Text(
                     "КОМБО ×$combo",
                     color = V4Gold,
@@ -460,9 +455,12 @@ private fun HeartResultCard(run: HeartRunResult, onClose: () -> Unit) {
             ) {
                 Text("💖", fontSize = 64.sp)
                 Text("Уровень ${run.level} пройден!", color = V4Plum, fontSize = 24.sp, fontWeight = FontWeight.Black)
-                Text("${"⭐".repeat(run.stars)}", fontSize = 30.sp)
+                Text("⭐".repeat(run.stars), fontSize = 30.sp)
                 Text("+${run.reward} любви", color = V4Rose, fontSize = 30.sp, fontWeight = FontWeight.Black)
-                Text("Точность ${(run.accuracy * 100).roundToInt()}% · комбо ${run.bestCombo} · идеальных ${run.perfectHits}", textAlign = TextAlign.Center)
+                Text(
+                    "Точность ${(run.accuracy * 100).roundToInt()}% · комбо ${run.bestCombo} · идеальных ${run.perfectHits}",
+                    textAlign = TextAlign.Center
+                )
                 if ((run.level + 1) % 5 == 0) {
                     Text("🎁 Открыт особый сюрприз за серию уровней!", color = V4Berry, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
                 }
