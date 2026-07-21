@@ -26,11 +26,11 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Build debug APK
+      - name: Test game logic and build debug APK
         shell: bash
         run: |
           set -o pipefail
-          gradle :app:assembleDebug --stacktrace 2>&1 | tee build-output.log
+          gradle :app:testDebugUnitTest :app:assembleDebug --stacktrace 2>&1 | tee build-output.log
 
       - name: Upload build log on failure
         if: failure()
