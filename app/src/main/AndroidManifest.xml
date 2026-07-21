@@ -7,9 +7,11 @@
         android:label="Сюрприз"
         android:supportsRtl="true"
         android:theme="@style/Theme.LoveYou">
-        <activity
-            android:name=".SurpriseActivity"
-            android:exported="true">
+        <activity android:name=".SurpriseActivity" android:exported="false" />
+        <activity android:name=".SurpriseV4Activity" android:exported="false" />
+        <activity android:name=".Match3Activity" android:exported="false" />
+        <activity android:name=".TetrisActivity" android:exported="false" />
+        <activity android:name=".SurpriseHubActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
