@@ -132,6 +132,7 @@ private fun Match3Adventure(onClose: () -> Unit) {
                 MatchBoard(
                     state = state,
                     enabled = !state.finished && !resolving,
+                    modifier = Modifier.fillMaxWidth().weight(1f),
                     onSwap = { first, second ->
                         val result = Match3Engine.swap(state, first, second, Random.Default)
                         if (!result.accepted) {
@@ -201,9 +202,10 @@ private fun Match3Adventure(onClose: () -> Unit) {
 private fun MatchBoard(
     state: Match3State,
     enabled: Boolean,
+    modifier: Modifier = Modifier,
     onSwap: (Int, Int) -> Unit
 ) {
-    BoxWithConstraints(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+    BoxWithConstraints(modifier, contentAlignment = Alignment.Center) {
         val maxBoard = minOf(maxWidth, maxHeight, 440.dp)
         Column(
             Modifier.size(maxBoard).clip(RoundedCornerShape(24.dp)).background(Color.White.copy(alpha = .96f)).padding(6.dp),
