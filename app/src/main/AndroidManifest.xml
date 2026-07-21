@@ -9,6 +9,9 @@
         android:theme="@style/Theme.LoveYou">
         <activity
             android:name=".SurpriseActivity"
+            android:exported="false" />
+        <activity
+            android:name=".SurpriseV4Activity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
