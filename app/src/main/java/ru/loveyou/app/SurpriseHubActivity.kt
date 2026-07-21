@@ -48,6 +48,7 @@ private fun SurpriseHub() {
     val matchLevel = context.getSharedPreferences("match3_progress", 0).getInt("level", 1)
     val tetrisBest = context.getSharedPreferences("falling_hearts_progress", 0).getInt("best", 0)
     val rescueLevel = context.getSharedPreferences("rescue_progress", 0).getInt("level", 1)
+    val memoryLevel = context.getSharedPreferences("memory_progress", 0).getInt("level", 1)
     val transition = rememberInfiniteTransition(label = "hub")
     val pulse by transition.animateFloat(.96f, 1.06f, infiniteRepeatable(tween(950), RepeatMode.Reverse), label = "pulse")
 
@@ -80,9 +81,10 @@ private fun SurpriseHub() {
             item { AdventureCard("🌷", "Сад чудес", "Три в ряд со свайпами и каскадами · уровень $matchLevel", "Открыть сад") { context.startActivity(Intent(context, Match3Activity::class.java)) } }
             item { AdventureCard("💞", "Падающие сердца", "Фигуры, линии, комбо и растущая скорость · рекорд $tetrisBest", "Начать падение") { context.startActivity(Intent(context, TetrisActivity::class.java)) } }
             item { AdventureCard("🗝️", "Спаси сердце", "Гарантированно проходимый лабиринт с управлением пальцем · уровень $rescueLevel", "Начать спасение") { context.startActivity(Intent(context, RescueActivity::class.java)) } }
+            item { AdventureCard("💌", "Тёплые пары", "Память, предпросмотр, лимит ошибок и растущее поле · уровень $memoryLevel", "Собрать воспоминания") { context.startActivity(Intent(context, MemoryActivity::class.java)) } }
             item {
                 Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = .18f))) {
-                    Text("Следующие главы: пары с уровнями памяти и сенсорная головоломка.", color = Color.White, modifier = Modifier.padding(15.dp))
+                    Text("Следующая глава: сенсорная головоломка с плавным движением плиток.", color = Color.White, modifier = Modifier.padding(15.dp))
                 }
             }
             item { Spacer(Modifier.height(4.dp)) }
