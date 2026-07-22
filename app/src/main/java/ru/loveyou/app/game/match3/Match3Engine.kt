@@ -60,21 +60,7 @@ class Match3Engine(
     private val columns: Int = 8,
     private val random: Random = Random.Default
 ) {
-    fun createPlayableBoard(): Match3Board {
-        repeat(100) {
-            var board = emptyBoard()
-            for (row in 0 until rows) {
-                for (column in 0 until columns) {
-                    val cell = Cell(row, column)
-                    val forbidden = typesThatWouldMatch(board, cell)
-                    val type = GemType.entries.filterNot { it in forbidden }.random(random)
-                    board = board.with(cell, Gem(type))
-                }
-            }
-            if (findMatches(board).isEmpty() && hasPossibleMove(board)) return board
-        }
-        error("Unable to generate playable match-3 board")
-    }
+    fun createPlayableBoard(): Match3Board = createPlayableBoard(rows, columns)
 
     fun swap(board: Match3Board, first: Cell, second: Cell): SwapResult {
         if (!areAdjacent(first, second)) return SwapResult(false, board)
@@ -87,7 +73,7 @@ class Match3Engine(
         val cascades = mutableListOf<CascadeStep>()
         var combo = 1
         var total = 0
-        repeat(30) {
+        repeat(MAX_CASCADES) {
             val matches = findMatches(swapped)
             if (matches.isEmpty()) {
                 val playable = if (hasPossibleMove(swapped)) swapped else shuffle(swapped)
@@ -95,13 +81,15 @@ class Match3Engine(
             }
 
             val removed = expandSpecialEffects(swapped, matches.flatMap { it.cells }.toSet())
-            val stepScore = removed.size * 10 * combo
+            val stepScore = removed.size * BASE_GEM_SCORE * combo
             total += stepScore
             cascades += CascadeStep(removed, stepScore, combo)
             swapped = collapseAndRefill(remove(swapped, removed))
             combo++
         }
-        return SwapResult(true, swapped, cascades, total)
+
+        val stable = settleBoard(swapped)
+        return SwapResult(true, stable, cascades, total)
     }
 
     fun findMatches(board: Match3Board): List<MatchGroup> {
@@ -112,7 +100,7 @@ class Match3Engine(
             while (start < board.columns) {
                 val type = board[Cell(row, start)]?.type
                 var end = start + 1
-                while (end < board.columns && board[Cell(row, end)]?.type == type && type != null) end++
+                while (end < board.columns && type != null && board[Cell(row, end)]?.type == type) end++
                 if (type != null && end - start >= 3) {
                     groups += MatchGroup((start until end).map { Cell(row, it) }.toSet(), type)
                 }
@@ -125,7 +113,7 @@ class Match3Engine(
             while (start < board.rows) {
                 val type = board[Cell(start, column)]?.type
                 var end = start + 1
-                while (end < board.rows && board[Cell(end, column)]?.type == type && type != null) end++
+                while (end < board.rows && type != null && board[Cell(end, column)]?.type == type) end++
                 if (type != null && end - start >= 3) {
                     groups += MatchGroup((start until end).map { Cell(it, column) }.toSet(), type)
                 }
@@ -154,14 +142,30 @@ class Match3Engine(
 
     fun shuffle(board: Match3Board): Match3Board {
         val gems = board.cells.filterNotNull()
-        repeat(100) {
-            val shuffled = Match3Board(board.rows, board.columns, gems.shuffled(random))
-            if (findMatches(shuffled).isEmpty() && hasPossibleMove(shuffled)) return shuffled
+        if (gems.size == board.cells.size) {
+            repeat(GENERATION_ATTEMPTS) {
+                val shuffled = Match3Board(board.rows, board.columns, gems.shuffled(random))
+                if (findMatches(shuffled).isEmpty() && hasPossibleMove(shuffled)) return shuffled
+            }
         }
-        return createPlayableBoard()
+        return createPlayableBoard(board.rows, board.columns)
     }
 
-    private fun emptyBoard() = Match3Board(rows, columns, List(rows * columns) { null })
+    private fun createPlayableBoard(boardRows: Int, boardColumns: Int): Match3Board {
+        repeat(GENERATION_ATTEMPTS) {
+            var board = Match3Board(boardRows, boardColumns, List(boardRows * boardColumns) { null })
+            for (row in 0 until boardRows) {
+                for (column in 0 until boardColumns) {
+                    val cell = Cell(row, column)
+                    val forbidden = typesThatWouldMatch(board, cell)
+                    val type = GemType.entries.filterNot { it in forbidden }.random(random)
+                    board = board.with(cell, Gem(type))
+                }
+            }
+            if (findMatches(board).isEmpty() && hasPossibleMove(board)) return board
+        }
+        error("Unable to generate playable match-3 board")
+    }
 
     private fun areAdjacent(a: Cell, b: Cell): Boolean =
         abs(a.row - b.row) + abs(a.column - b.column) == 1
@@ -199,28 +203,54 @@ class Match3Engine(
         return board.copy(cells = next)
     }
 
+    private fun settleBoard(start: Match3Board): Match3Board {
+        var board = start
+        repeat(MAX_CASCADES) {
+            val matches = findMatches(board)
+            if (matches.isEmpty()) return if (hasPossibleMove(board)) board else shuffle(board)
+            val removed = matches.flatMap { it.cells }.toSet()
+            board = collapseAndRefill(remove(board, removed))
+        }
+        return shuffle(board)
+    }
+
     private fun expandSpecialEffects(board: Match3Board, initial: Set<Cell>): Set<Cell> {
         val removed = initial.toMutableSet()
         val queue = ArrayDeque(initial.toList())
         while (queue.isNotEmpty()) {
             val cell = queue.removeFirst()
-            when (board[cell]?.special ?: SpecialGem.NONE) {
-                SpecialGem.NONE -> Unit
+            val affected: List<Cell> = when (board[cell]?.special ?: SpecialGem.NONE) {
+                SpecialGem.NONE -> emptyList()
                 SpecialGem.ROW -> (0 until board.columns).map { Cell(cell.row, it) }
                 SpecialGem.COLUMN -> (0 until board.rows).map { Cell(it, cell.column) }
                 SpecialGem.BOMB -> buildList {
-                    for (r in cell.row - 1..cell.row + 1) for (c in cell.column - 1..cell.column + 1) {
-                        if (r in 0 until board.rows && c in 0 until board.columns) add(Cell(r, c))
+                    for (row in cell.row - 1..cell.row + 1) {
+                        for (column in cell.column - 1..cell.column + 1) {
+                            if (row in 0 until board.rows && column in 0 until board.columns) {
+                                add(Cell(row, column))
+                            }
+                        }
                     }
                 }
                 SpecialGem.RAINBOW -> {
-                    val target = board.cells.firstOrNull { it != null && it.special == SpecialGem.NONE }?.type
+                    val target = board.cells.firstOrNull {
+                        it != null && it.special == SpecialGem.NONE
+                    }?.type
                     if (target == null) emptyList() else board.cells.indices
                         .map(board::cell)
                         .filter { board[it]?.type == target }
                 }
-            }.forEach { if (removed.add(it)) queue.addLast(it) }
+            }
+            affected.forEach { affectedCell ->
+                if (removed.add(affectedCell)) queue.addLast(affectedCell)
+            }
         }
         return removed
+    }
+
+    private companion object {
+        const val BASE_GEM_SCORE = 10
+        const val GENERATION_ATTEMPTS = 100
+        const val MAX_CASCADES = 30
     }
 }
