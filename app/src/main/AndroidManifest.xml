@@ -12,6 +12,12 @@
             android:exported="false" />
         <activity
             android:name=".SurpriseV4Activity"
+            android:exported="false" />
+        <activity
+            android:name=".Match3Activity"
+            android:exported="false" />
+        <activity
+            android:name=".GameHubActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
